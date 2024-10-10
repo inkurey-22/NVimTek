@@ -1,51 +1,82 @@
--- NVimTek/init.lua
+-- ~/.config/nvim/lua/myplugin/init.lua
 
+-- Function to get the project name or use "curry" as a placeholder
 local function get_project_name()
-    local handle = io.popen("git rev-parse --show-toplevel")
+  local handle = io.popen("git rev-parse --show-toplevel 2>/dev/null | xargs basename 2>/dev/null")
+  if handle then
     local result = handle:read("*a")
     handle:close()
-
-    return vim.fn.fnamemodify(result, "t"):gsub("\n", "")
+    if result:gsub("%s+", "") ~= "" then
+      return result:gsub("%s+", "")
+    end
+  end
+  return "curry"
 end
 
-local function insert_header()
-    local filetype = vim.bo.filetype
-    local header = ""
-    local year = os.date("%Y")
-    local project_name = get_project_name()
+-- Function to get the current year
+local function get_current_year()
+  return os.date("%Y")
+end
 
-    local file_description = vim.fn.input("File description: ")
+-- Function to create Epitech header based on file type
+local function create_epitech_header(filetype, filename)
+  local project_name = get_project_name()
+  local current_year = get_current_year()
+  local file_description = vim.fn.input("Enter file description: ")
 
-    if filetype == "c" or filetype == "h" then
-        header = string.format([[
+  local header
+  if filename:match("%.h$") then
+    local guard = filename:upper():gsub("%.", "_"):gsub("[^%w_]", "_") .. "_"
+    header = string.format([[
 /*
 ** EPITECH PROJECT, %s
 ** %s
 ** File description:
 ** %s
 */
-]], year, project_name, file_description)
-    elseif filetype == "make" then
-        header = string.format([[
+
+#ifndef %s
+    #define %s
+#endif /* !%s */
+]], current_year, project_name, file_description, guard, guard, guard)
+    elseif filename == "Makefile" then
+    -- Handle Makefile
+    header = string.format([[
 ##
 ## EPITECH PROJECT, %s
 ## %s
 ## File description:
 ## %s
 ##
-]], year, project_name, file_description)
+]], current_year, project_name, file_description)
+  else
+    header = string.format([[
+/*
+** EPITECH PROJECT, %s
+** %s
+** File description:
+** %s
+*/
+]], current_year, project_name, file_description)
+  end
+
+  return header
 end
 
-vim.api.nvim_buf_set_lines(0, 0, 0, false, vim.split(header, "\n"))
+-- Function to insert the Epitech header
+local function insert_header()
+  local filetype = vim.bo.filetype
+  local filename = vim.fn.expand("%:t")
+  local header = create_epitech_header(filetype, filename)
+  local header_lines = {}
+  for line in header:gmatch("[^\r\n]+") do
+    table.insert(header_lines, line)
+  end
+  vim.api.nvim_buf_set_lines(0, 0, 0, false, header_lines)
 end
 
-vim.api.nvim_create_user_command('TekHeader', insert_header, {})
+-- Create the :Header command in Neovim
+vim.api.nvim_create_user_command('Header', insert_header, {})
 
-local function set_80_char_line()
-    vim.wo.colorcolumn = "80"
-end
-
-vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
-        pattern = { "*.c", "*.h" },
-        callback = set_80_char_line,
-})
+-- Add an 80-character line
+vim.opt.colorcolumn = "80"
