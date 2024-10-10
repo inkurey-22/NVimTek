@@ -1,4 +1,4 @@
--- ~/.config/nvim/lua/myplugin/init.lua
+-- ~/.config/nvim/lua/NVimTek/init.lua
 
 -- Function to get the project name or use "curry" as a placeholder
 local function get_project_name()
