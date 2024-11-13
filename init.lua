@@ -37,8 +37,7 @@ local function create_epitech_header(filetype, filename)
 
 #ifndef %s
     #define %s
-#endif /* !%s */
-]], current_year, project_name, file_description, guard, guard, guard)
+#endif /* !%s */]], current_year, project_name, file_description, guard, guard, guard)
     elseif filename == "Makefile" then
     -- Handle Makefile
     header = string.format([[
